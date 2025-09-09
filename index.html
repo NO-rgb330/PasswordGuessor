@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>250k Password Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1a1a1a;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      background-color: #2a2a2a;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      width: 90%;
+      max-width: 500px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: #4caf50;
+      color: #fff;
+    }
+    input {
+      width: 50px;
+      padding: 5px;
+      margin-left: 10px;
+      border-radius: 5px;
+      border: none;
+      text-align: center;
+    }
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>250,000 Password Generator</h1>
+    <label>Password length:
+      <input type="number" id="length" value="12" min="6" max="20">
+    </label>
+    <button id="generate">Generate & Download</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    function randPassword(len) {
+      const arr = new Uint8Array(len);
+      crypto.getRandomValues(arr);
+      let s = "";
+      for (let i = 0; i < len; i++) {
+        s += charset[arr[i] % charset.length];
+      }
+      return s;
+    }
+
+    document.getElementById("generate").addEventListener("click", () => {
+      const length = parseInt(document.getElementById("length").value) || 12;
+      const total = 250000;
+      const chunkSize = 5000;
+      const blobParts = [];
+      const status = document.getElementById("status");
+      status.textContent = "Generating passwords... Please wait.";
+
+      setTimeout(() => { // allow UI to update
+        let chunk = [];
+        for (let i = 0; i < total; i++) {
+          chunk.push(randPassword(length));
+          if (chunk.length >= chunkSize) {
+            blobParts.push(chunk.join("\n") + "\n");
+            chunk = [];
+          }
+          if (i % 50000 === 0 && i !== 0) {
+            status.textContent = `Generated ${i} / ${total} passwords...`;
+          }
+        }
+        if (chunk.length) blobParts.push(chunk.join("\n") + "\n");
+
+        const blob = new Blob(blobParts, {type: "text/plain"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `passwords_${total}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        status.textContent = `Done! Download started.`;
+      }, 100);
+    });
+  </script>
+</body>
+</html>
